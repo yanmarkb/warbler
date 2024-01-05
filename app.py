@@ -1,8 +1,10 @@
 import os
 
-from flask import Flask, render_template, request, flash, redirect, session, g
+from flask import Flask, render_template, request, flash, redirect, session, g 
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
+import pdb
+
 
 from forms import UserAddForm, LoginForm, MessageForm
 from models import db, connect_db, User, Message
@@ -20,6 +22,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = True
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "it's a secret")
+app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 toolbar = DebugToolbarExtension(app)
 
 connect_db(app)
@@ -66,7 +69,7 @@ def signup():
     """
 
     form = UserAddForm()
-
+    
     if form.validate_on_submit():
         try:
             user = User.signup(
@@ -82,7 +85,7 @@ def signup():
             return render_template('users/signup.html', form=form)
 
         do_login(user)
-
+        
         return redirect("/")
 
     else:
@@ -114,6 +117,9 @@ def logout():
     """Handle logout of user."""
 
     # IMPLEMENT THIS
+    User.logout()
+    flash("You have successfully logged out. See you later!", "success")
+    return redirect('/')
 
 
 ##############################################################################
@@ -150,6 +156,7 @@ def users_show(user_id):
                 .order_by(Message.timestamp.desc())
                 .limit(100)
                 .all())
+    # pdb.set_trace()
     return render_template('users/show.html', user=user, messages=messages)
 
 
@@ -290,7 +297,7 @@ def homepage():
     - anon users: no messages
     - logged in: 100 most recent messages of followed_users
     """
-
+    
     if g.user:
         messages = (Message
                     .query

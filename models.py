@@ -4,6 +4,7 @@ from datetime import datetime
 
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
+from flask import session
 
 bcrypt = Bcrypt()
 db = SQLAlchemy()
@@ -168,6 +169,10 @@ class User(db.Model):
                 return user
 
         return False
+    @classmethod
+    def logout(cls):
+            """Clear the session to log out the user."""
+            session.clear()  # Clear the session to log out the user.
 
 
 class Message(db.Model):
