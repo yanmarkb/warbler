@@ -116,7 +116,7 @@ def login():
 def logout():
     """Handle logout of user."""
 
-    # IMPLEMENT THIS
+    # IMPLEMENT THISpip freeze > requirements.txtpip freeze > requirements.txt
     User.logout()
     flash("You have successfully logged out. See you later!", "success")
     return redirect('/')
@@ -218,8 +218,28 @@ def stop_following(follow_id):
 def profile():
     """Update profile for current user."""
 
-    # IMPLEMENT THIS
-
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+    
+    user = User.query.get_or_404(g.user.id)
+    form = UserAddForm(obj=user)
+    
+    if form.validate_on_submit():
+        if User.authenticate(user.username, form.password.data):
+            user.username = form.username.data
+            user.email = form.email.data
+            user.image_url = form.image_url.data or user.image_url
+            user.header_image_url = form.header_image_url.data or user.header_image_url 
+            user.bio = form.bio.data
+            user.location = form.location.data
+        
+            db.session.commit()
+            return redirect(f"/users/{user.id}")
+        else:
+            flash("Invalid password, please try again.", "danger")
+    
+    return render_template("users/edit.html", form=form, user=user)
 
 @app.route('/users/delete', methods=["POST"])
 def delete_user():
@@ -309,6 +329,36 @@ def homepage():
 
     else:
         return render_template('home-anon.html')
+
+# @app.route('/users/<int:user_id>/edit', methods=["GET", "POST"])
+# def edit_user(user_id):
+#     """Edit user profile."""
+
+#     if not g.user:
+#         flash("Access unauthorized.", "danger")
+#         return redirect("/")
+    
+#     user = User.query.get_or_404(user_id)
+#     form = UserAddForm(obj=user)
+    
+#     if form.validate_on_submit():
+#         if User.authenticate(user.username, form.password.data):
+#             user.username = form.username.data
+#             user.email = form.email.data
+#             user.image_url = form.image_url.data
+#             user.header_image_url = form.header_image_url.data
+#             user.bio = form.bio.data
+#             user.location = form.location.data
+        
+#             db.session.commit()
+#             return redirect(f"/users/{user.id}")
+#         else:
+#             flash("Invalid password, please try again.", "danger")
+#             return redirect("/")
+    
+#     else:
+#         return render_template("users/edit.html", form=form, user=user)
+
 
 
 ##############################################################################
