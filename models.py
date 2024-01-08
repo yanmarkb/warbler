@@ -45,9 +45,10 @@ class Likes(db.Model):
 
     message_id = db.Column(
         db.Integer,
-        db.ForeignKey('messages.id', ondelete='cascade'),
-        unique=True
+        db.ForeignKey('messages.id', ondelete='cascade')
     )
+
+    __table_args__ = (db.UniqueConstraint('user_id', 'message_id', name='user_message_uc'),)
 
 
 class User(db.Model):
@@ -111,10 +112,7 @@ class User(db.Model):
         secondaryjoin=(Follows.user_being_followed_id == id)
     )
 
-    likes = db.relationship(
-        'Message',
-        secondary="likes"
-    )
+    likes = db.relationship('Message', secondary='likes', backref='user_likes')
 
     def __repr__(self):
         return f"<User #{self.id}: {self.username}, {self.email}>"

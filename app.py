@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, render_template, request, flash, redirect, session, g 
+from flask import Flask, render_template, request, flash, redirect, session, g, url_for
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 import pdb
@@ -224,6 +224,7 @@ def profile():
     
     user = User.query.get_or_404(g.user.id)
     form = UserAddForm(obj=user)
+    num_liked_messages = len(user.likes)  # Get the number of liked messages
     
     if form.validate_on_submit():
         if User.authenticate(user.username, form.password.data):
@@ -239,7 +240,7 @@ def profile():
         else:
             flash("Invalid password, please try again.", "danger")
     
-    return render_template("users/edit.html", form=form, user=user)
+    return render_template("users/edit.html", form=form, user=user, num_liked_messages=num_liked_messages)
 
 @app.route('/users/delete', methods=["POST"])
 def delete_user():
@@ -333,37 +334,37 @@ def homepage():
     else:
         return render_template('home-anon.html')
 
-# @app.route('/users/<int:user_id>/edit', methods=["GET", "POST"])
-# def edit_user(user_id):
-#     """Edit user profile."""
+@app.route('/users/toggle_like/<int:msg_id>', methods=['POST'])
+def toggle_like(msg_id):
+    """Toggle a liked message for the currently-logged-in user."""
 
-#     if not g.user:
-#         flash("Access unauthorized.", "danger")
-#         return redirect("/")
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    message = Message.query.get_or_404(msg_id)
+
+    if message in g.user.likes:
+        g.user.likes.remove(message)
+    else:
+        g.user.likes.append(message)
+
+    db.session.commit()
+
+    # Redirect to the referrer URL if it's set, otherwise redirect to the home page
+    return redirect(request.referrer or url_for('homepage'))
     
-#     user = User.query.get_or_404(user_id)
-#     form = UserAddForm(obj=user)
+@app.route('/users/<int:user_id>/likes')
+def show_likes(user_id):
+    """Show list of liked messages for a user."""
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
     
-#     if form.validate_on_submit():
-#         if User.authenticate(user.username, form.password.data):
-#             user.username = form.username.data
-#             user.email = form.email.data
-#             user.image_url = form.image_url.data
-#             user.header_image_url = form.header_image_url.data
-#             user.bio = form.bio.data
-#             user.location = form.location.data
-        
-#             db.session.commit()
-#             return redirect(f"/users/{user.id}")
-#         else:
-#             flash("Invalid password, please try again.", "danger")
-#             return redirect("/")
-    
-#     else:
-#         return render_template("users/edit.html", form=form, user=user)
-
-
-
+    user = User.query.get_or_404(user_id)
+    messages = user.likes
+    return render_template('users/likes.html', user=user, messages=messages)
 ##############################################################################
 # Turn off all caching in Flask
 #   (useful for dev; in production, this kind of stuff is typically
