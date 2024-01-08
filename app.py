@@ -4,10 +4,11 @@ from flask import Flask, render_template, request, flash, redirect, session, g, 
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 import pdb
+from flask_migrate import Migrate
 
 
 from forms import UserAddForm, LoginForm, MessageForm
-from models import db, connect_db, User, Message
+from models import db, connect_db, User, Message, Likes
 
 CURR_USER_KEY = "curr_user"
 
@@ -27,7 +28,7 @@ toolbar = DebugToolbarExtension(app)
 
 connect_db(app)
 
-
+migrate = Migrate(app, db)
 ##############################################################################
 # User signup/login/logout
 
@@ -344,10 +345,15 @@ def toggle_like(msg_id):
 
     message = Message.query.get_or_404(msg_id)
 
-    if message in g.user.likes:
-        g.user.likes.remove(message)
+    like = Likes.query.filter_by(user_id=g.user.id, message_id=message.id).first()
+
+    if like:
+        # If the user has already liked the message, remove the like
+        db.session.delete(like)
     else:
-        g.user.likes.append(message)
+        # If the user hasn't liked the message, add a new like
+        new_like = Likes(user_id=g.user.id, message_id=message.id)
+        db.session.add(new_like)
 
     db.session.commit()
 
