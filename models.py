@@ -5,6 +5,11 @@ from datetime import datetime
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
 from flask import session
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+from sqlalchemy.schema import CheckConstraint
+
 
 bcrypt = Bcrypt()
 db = SQLAlchemy()
@@ -120,7 +125,7 @@ class User(db.Model):
     def check_password(self, password):
         """Check password against hashed version."""
         return bcrypt.check_password_hash(self.password, password)
-        
+
     @classmethod
     def signup(cls, username, email, password, image_url):
         """Sign up user.
@@ -190,6 +195,10 @@ class Message(db.Model):
         db.Integer,
         db.ForeignKey('users.id', ondelete='CASCADE'),
         nullable=False,
+    )
+
+    __table_args__ = (
+        CheckConstraint(text != None, name='check_text_not_empty'),
     )
 
     user = db.relationship('User')

@@ -34,6 +34,11 @@ class UserModelTestCase(TestCase):
         Follows.query.delete()
 
         self.client = app.test_client()
+        
+    def tearDown(self):
+        """Clean up fouled transactions."""
+
+        db.session.rollback()
 
     def test_user_model(self):
         """Does basic model work?"""
@@ -97,3 +102,24 @@ class UserModelTestCase(TestCase):
 
         self.assertTrue(user1.is_followed_by(user2))  # it should return True
         self.assertFalse(user2.is_followed_by(user1))  # it should return False
+    def test_user_create_with_invalid_credentials(self):
+        """Does User.create fail to create a new user if any of the validations (e.g. uniqueness, non-nullable fields) fail?"""
+
+        User.signup(username='testuser', email='test@test.com', password='testpassword', image_url=None)
+        db.session.commit()
+
+        invalid_user = User.signup(username='testuser', email='test2@test.com', password='testpassword', image_url=None)
+        with self.assertRaises(Exception):  # it should raise an exception because the username is not unique
+            db.session.commit()
+
+        invalid_user = User.signup(username=None, email='test3@test.com', password='testpassword', image_url=None)
+        with self.assertRaises(Exception):  # it should raise an exception because the username is None
+            db.session.commit()
+
+    def test_user_authenticate_with_invalid_username(self):
+        """Does User.authenticate fail to return a user when the username is invalid?"""
+
+        User.signup(username='testuser', email='test@test.com', password='testpassword', image_url=None)
+        db.session.commit()
+
+        self.assertFalse(User.authenticate(username='invalidusername', password='testpassword'))  # it should return False because the username is invalid
