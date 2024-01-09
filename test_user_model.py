@@ -4,11 +4,10 @@
 #
 #    python -m unittest test_user_model.py
 
-
 import os
 from unittest import TestCase
-
-from models import db, User, Message, Follows
+from models import db, User, Message, Follows, Likes
+from app import app
 
 # BEFORE we import our app, let's set an environmental variable
 # to use a different database for tests (we need to do this
@@ -17,17 +16,11 @@ from models import db, User, Message, Follows
 
 os.environ['DATABASE_URL'] = "postgresql:///warbler-test"
 
-
-# Now we can import app
-
-from app import app
-
 # Create our tables (we do this here, so we only create the tables
 # once for all tests --- in each test, we'll delete the data
 # and create fresh new clean test data
 
 db.create_all()
-
 
 class UserModelTestCase(TestCase):
     """Test views for messages."""
@@ -35,6 +28,7 @@ class UserModelTestCase(TestCase):
     def setUp(self):
         """Create test client, add sample data."""
 
+        Likes.query.delete()
         User.query.delete()
         Message.query.delete()
         Follows.query.delete()
@@ -56,3 +50,50 @@ class UserModelTestCase(TestCase):
         # User should have no messages & no followers
         self.assertEqual(len(u.messages), 0)
         self.assertEqual(len(u.followers), 0)
+
+    def test_new_user(self):
+        user = User.signup(username='testuser', email='test@test.com', password='testpassword', image_url=None)
+        db.session.commit()
+
+        self.assertEqual(user.username, 'testuser')
+        self.assertEqual(user.email, 'test@test.com')
+        self.assertNotEqual(user.password, 'testpassword')  # password should be hashed, it should not be equal to the original password
+
+    def test_password_verification(self):
+        user = User.signup(username='testuser', email='test@test.com', password='testpassword', image_url=None)
+        db.session.commit()
+
+        self.assertTrue(user.check_password('testpassword'))  # it should return True for correct password
+        self.assertFalse(user.check_password('wrongpassword'))  # it should return False for incorrect password
+
+    def test_user_repr(self):
+        user = User.signup(username='testuser', email='test@test.com', password='testpassword', image_url=None)
+        db.session.commit()
+
+        self.assertEqual(repr(user), f'<User #{user.id}: {user.username}, {user.email}>')
+
+    def test_is_following(self):
+        user1 = User(username='testuser1', email='test1@test.com', password='testpassword')
+        user2 = User(username='testuser2', email='test2@test.com', password='testpassword')
+        db.session.add(user1)
+        db.session.add(user2)
+        db.session.commit()
+
+        user1.following.append(user2)
+        db.session.commit()
+
+        self.assertTrue(user1.is_following(user2))  # it should return True
+        self.assertFalse(user2.is_following(user1))  # it should return False
+
+    def test_is_followed_by(self):
+        user1 = User(username='testuser1', email='test1@test.com', password='testpassword')
+        user2 = User(username='testuser2', email='test2@test.com', password='testpassword')
+        db.session.add(user1)
+        db.session.add(user2)
+        db.session.commit()
+
+        user1.followers.append(user2)
+        db.session.commit()
+
+        self.assertTrue(user1.is_followed_by(user2))  # it should return True
+        self.assertFalse(user2.is_followed_by(user1))  # it should return False

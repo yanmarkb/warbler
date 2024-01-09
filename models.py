@@ -116,7 +116,11 @@ class User(db.Model):
 
         found_user_list = [user for user in self.following if user == other_user]
         return len(found_user_list) == 1
-
+    
+    def check_password(self, password):
+        """Check password against hashed version."""
+        return bcrypt.check_password_hash(self.password, password)
+        
     @classmethod
     def signup(cls, username, email, password, image_url):
         """Sign up user.
