@@ -147,17 +147,18 @@ def list_users():
 def users_show(user_id):
     """Show user profile."""
 
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/", 403)
+
     user = User.query.get_or_404(user_id)
 
-    # snagging messages in order from the database;
-    # user.messages won't be in order by default
     messages = (Message
                 .query
                 .filter(Message.user_id == user_id)
                 .order_by(Message.timestamp.desc())
                 .limit(100)
                 .all())
-    # pdb.set_trace()
     return render_template('users/show.html', user=user, messages=messages)
 
 
