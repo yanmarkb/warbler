@@ -16,9 +16,11 @@ Faker==0.9.1
 Flask==1.0.2
 Flask-Bcrypt==0.7.1
 Flask-DebugToolbar==0.10.1
+Flask-Migrate==4.0.5
 Flask-SQLAlchemy==2.3.2
 Flask-WTF==0.14.2
 greenlet==3.0.3
+gunicorn==21.2.0
 idna==3.4
 importlib-metadata==7.0.1
 iniconfig==2.0.0
