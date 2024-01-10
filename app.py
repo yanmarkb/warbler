@@ -269,21 +269,27 @@ def messages_add():
     Show form if GET. If valid, update message and redirect to user page.
     """
 
-    if not g.user:
+    if CURR_USER_KEY not in session:
         flash("Access unauthorized.", "danger")
-        return redirect("/")
+        return redirect("/", code=401)
+
+    user_id = session[CURR_USER_KEY]
+    user = User.query.get(user_id)
+
+    if not user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/", code=401)
 
     form = MessageForm()
 
     if form.validate_on_submit():
         msg = Message(text=form.text.data)
-        g.user.messages.append(msg)
+        user.messages.append(msg)
         db.session.commit()
 
-        return redirect(f"/users/{g.user.id}")
+        return redirect(f"/users/{user.id}")
 
     return render_template('messages/new.html', form=form)
-
 
 @app.route('/messages/<int:message_id>', methods=["GET"])
 def messages_show(message_id):
@@ -299,9 +305,13 @@ def messages_destroy(message_id):
 
     if not g.user:
         flash("Access unauthorized.", "danger")
-        return redirect("/")
+        return redirect("/", 403)
 
     msg = Message.query.get(message_id)
+    if msg.user_id != g.user.id:
+        flash("Access unauthorized.", "danger")
+        return redirect("/", 403)
+
     db.session.delete(msg)
     db.session.commit()
 

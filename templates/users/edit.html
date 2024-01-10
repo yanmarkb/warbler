@@ -5,9 +5,7 @@
   <div class="row justify-content-md-center">
     <div class="col-md-4">
       <h2 class="join-message">Edit Your Profile.</h2>
-      
-      <p>Number of liked warbles: {{ num_liked_messages }}</p>
-      <a href="/users/{{ user.id }}/likes">See all liked warbles</a>
+    
 
       <form method="POST" id="user_form">
         {{ form.hidden_tag() }}
